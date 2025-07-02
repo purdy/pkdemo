@@ -1,0 +1,4 @@
+name: pkdemo
+recipe: lamp
+config:
+  webroot: public
