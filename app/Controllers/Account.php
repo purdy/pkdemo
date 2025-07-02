@@ -2,8 +2,8 @@
 
 namespace App\Controllers;
 
-class Home extends BaseController {
+class Account extends BaseController {
   public function index(): string {
-    return view('main-page');
+    return view('account');
   }
 }
