@@ -3,3 +3,9 @@ recipe: lamp
 config:
   webroot: public
   php: 8.2
+tooling:
+  spark:
+    service: appserver
+    description: Run the CodeIgniter Spark cmd
+    cmd:
+      - php spark
