@@ -5,15 +5,31 @@ document.addEventListener('DOMContentLoaded', function() {
     createAccountButton.addEventListener('click', function(e) {
       e.preventDefault();
       // check to see if credential management is supported
-      // post email to the server to check if it exists
-      // if it does, we need to ask the user to click the log in link to log in instead
-      // if it doesn't, then we have creation args that we can pass into the credential creation
-      // once we have the credential back, we can post it to the server to create the account
       if (typeof window.PublicKeyCredential !== 'undefined'
         && typeof window.PublicKeyCredential.isConditionalMediationAvailable === 'function'
       ) {
         const email = document.getElementById('email').value;
         if (email) {
+          // post email to the server to check if it exists
+          fetch('/check-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ email: email })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.exists) {
+            }
+            else {
+
+            }
+          });
+          // if it does, we need to ask the user to click the log in link to log in instead
+          // if it doesn't, then we have creation args that we can pass into the credential creation
+          // once we have the credential back, we can post it to the server to create the account
         }
       }
     });
