@@ -14,6 +14,11 @@ class SetupInitialTables extends Migration {
         'unsigned' => true,
         'auto_increment' => true,
       ],
+      'guid' => [
+        'type' => 'VARCHAR',
+        'constraint' => 6,
+        'null' => true,
+      ],
       'email' => [
         'type' => 'VARCHAR',
         'constraint' => 255,

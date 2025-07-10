@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Add event listener for the "Create Account" button
   const createAccountButton = document.getElementById('create-account-button');
   if (createAccountButton) {
-    createAccountButton.addEventListener('click', function(e) {
+    createAccountButton.addEventListener('click', async function(e) {
       e.preventDefault();
       // check to see if credential management is supported
       if (typeof window.PublicKeyCredential !== 'undefined'
@@ -10,23 +10,44 @@ document.addEventListener('DOMContentLoaded', function() {
       ) {
         const email = document.getElementById('email').value;
         if (email) {
-          // post email to the server to check if it exists
-          fetch('/check-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ email: email })
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.exists) {
+          try {
+            // post email to the server to check if it exists
+            const response = await fetch('/check-email', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              body: JSON.stringify({ email: email })
+            });
+
+            const data = await response.json();
+
+            if (data.status == 'available') {
+              let createArgs = data.create_args;
+              helper.bta(createArgs);
+              try {
+                let credential = await navigator.credentials.create(createArgs);
+                let credential_data = {
+                  client: credential.response.clientDataJSON ? helper.atb(credential.response.clientDataJSON) : null,
+                  attest: credential.response.attestationObject ? helper.atb(credential.response.attestationObject) : null
+                };
+                // You'll need to define form_data or handle the credential data differently
+                // form_data.append('credential', JSON.stringify(credential_data));
+              }
+              catch (error) {
+                console.error('Error creating credential:', error);
+                alert('Failed to create credential. Please try again.');
+                return;
+              }
             }
             else {
 
             }
-          });
+          } catch (error) {
+            console.error('Error checking email:', error);
+            alert('Failed to check email availability. Please try again.');
+          }
           // if it does, we need to ask the user to click the log in link to log in instead
           // if it doesn't, then we have creation args that we can pass into the credential creation
           // once we have the credential back, we can post it to the server to create the account
