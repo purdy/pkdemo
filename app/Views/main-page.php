@@ -17,7 +17,7 @@
     <input type="submit" value="Create Account" id="create-account-button">
     <?= form_close() ?>
     Or log in to an existing account?
-    <a href="">Log In</a>
+    <a href="" id="login-btn" class="btn">Log In</a>
   </main>
 </body>
 </html>

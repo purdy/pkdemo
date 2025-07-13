@@ -28,12 +28,24 @@ document.addEventListener('DOMContentLoaded', function() {
               helper.bta(createArgs);
               try {
                 let credential = await navigator.credentials.create(createArgs);
-                let credential_data = {
-                  client: credential.response.clientDataJSON ? helper.atb(credential.response.clientDataJSON) : null,
-                  attest: credential.response.attestationObject ? helper.atb(credential.response.attestationObject) : null
+
+                // create object
+                const credential_data = {
+                  transports: credential.response.getTransports ? credential.response.getTransports() : null,
+                  clientDataJSON: credential.response.clientDataJSON ? arrayBufferToBase64(credential.response.clientDataJSON) : null,
+                  attestationObject: credential.response.attestationObject ? arrayBufferToBase64(credential.response.attestationObject) : null
                 };
+
+                console.log('Credential created:', credential_data);
                 // You'll need to define form_data or handle the credential data differently
-                // form_data.append('credential', JSON.stringify(credential_data));
+                let form_data = new FormData();
+                form_data.append('email', email);
+                form_data.append('credential', JSON.stringify(credential_data));
+                // Post the credential to the server to create the account
+                const createResponse = await fetch('/create-account', {
+                  method: 'POST',
+                  body: form_data
+                });
               }
               catch (error) {
                 console.error('Error creating credential:', error);
@@ -54,6 +66,47 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     });
+  }
+  const loginButton = document.getElementById('login-btn');
+  if (loginButton) {
+    loginButton.addEventListener('click', async function(e) {
+      e.preventDefault();
+      let response = await fetch('/login-preflight');
+      let data = await response.json();
+      helper.bta(data);
+      let credential = await navigator.credentials.get(data);
+      console.log(data);
+      console.log(credential);
+      let credential_data = {
+        id: credential.rawId ? helper.atb(credential.rawId) : null,
+        client: credential.response.clientDataJSON ? helper.atb(credential.response.clientDataJSON) : null,
+        auth: credential.response.authenticatorData ? helper.atb(credential.response.authenticatorData) : null,
+        sig: credential.response.signature ? helper.atb(credential.response.signature) : null,
+        user: credential.response.userHandle ? helper.atb(credential.response.userHandle) : null
+      };
+      let form_data = new FormData();
+      form_data.append('credential', JSON.stringify(credential_data));
+      response = await fetch('/passkey-login', {
+        method: 'POST',
+        body: form_data
+      });
+
+    });
+  }
+
+  /**
+   * Convert a ArrayBuffer to Base64
+   * @param {ArrayBuffer} buffer
+   * @returns {String}
+   */
+  function arrayBufferToBase64(buffer) {
+    let binary = '';
+    let bytes = new Uint8Array(buffer);
+    let len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
   }
 });
 
