@@ -11,4 +11,4 @@ $routes->post('/create-account', 'Account::createAccount');
 $routes->get('/login-preflight', 'Account::loginPreflight');
 $routes->post('/passkey-login', 'Account::passkeyLogin');
 $routes->get('/account', 'Account::index');
-
+$routes->get('/logout', 'Account::logout');

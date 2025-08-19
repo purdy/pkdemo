@@ -24,28 +24,40 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (data.status == 'available') {
-              let createArgs = data.create_args;
-              helper.bta(createArgs);
+              // let jsonArgs = data.create_args;
+              // helper.bta(createArgs);
               try {
-                let credential = await navigator.credentials.create(createArgs);
-
-                // create object
-                const credential_data = {
-                  transports: credential.response.getTransports ? credential.response.getTransports() : null,
-                  clientDataJSON: credential.response.clientDataJSON ? arrayBufferToBase64(credential.response.clientDataJSON) : null,
-                  attestationObject: credential.response.attestationObject ? arrayBufferToBase64(credential.response.attestationObject) : null
+                data.create_args.publicKey = window.PublicKeyCredential.parseCreationOptionsFromJSON(data.create_args.publicKey);
+                const cred = await navigator.credentials.create(data.create_args);
+                const pubResp = cred.response;
+                const payload = {
+                  email: email,
+                  credential: {
+                    id: cred.id,
+                    rawId: toBase64Url(cred.rawId),
+                    type: cred.type,
+                    response: {
+                      attestationObject: toBase64Url(pubResp.attestationObject),
+                      clientDataJSON: toBase64Url(pubResp.clientDataJSON)
+                    }
+                  }
                 };
-
-                console.log('Credential created:', credential_data);
-                // You'll need to define form_data or handle the credential data differently
-                let form_data = new FormData();
-                form_data.append('email', email);
-                form_data.append('credential', JSON.stringify(credential_data));
-                // Post the credential to the server to create the account
+                console.log(payload);
                 const createResponse = await fetch('/create-account', {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                  },
                   method: 'POST',
-                  body: form_data
+                  body: JSON.stringify(payload)
                 });
+                const createData = await createResponse.json();
+                if (createData.status === 'success') {
+                  window.location.href = '/account';
+                }
+                else {
+                  alert('Failed to create account: ' + createData.message);
+                }
               }
               catch (error) {
                 console.error('Error creating credential:', error);
@@ -92,6 +104,11 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
     });
+  }
+
+  function toBase64Url(ab) {
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(ab)));
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 
   /**
