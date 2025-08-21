@@ -43,22 +43,49 @@ class Account extends BaseController {
 
   public function loginPreflight() {
     $domain = "pkdemo.lndo.site";
-    $webauthn = new WebAuthn("Simple Passkey App", $domain);
+    $webauthn = new WebAuthn("Simple Passkey App", $domain, null, true);
     $args = $webauthn->getGetArgs();
+    log_message('debug', "Login preflight args: " . json_encode($args));
     $session = session();
     $session->set('challenge', $webauthn->getChallenge()->getBinaryString());
     return $this->response->setJSON($args);
   }
 
   public function passkeyLogin() {
+    $session = session();
+    $challenge = $session->get('challenge');
     $domain = "pkdemo.lndo.site";
     $webauthn = new WebAuthn("Simple Passkey App", $domain);
-
-    $crendential_data = json_decode($this->request->getPost('credential'), true);
-    $credential_id = bin2hex(base64_decode($crendential_data['id']));
-    $unique_id = bin2hex(base64_decode($crendential_data['user']));
-    log_message('debug', 'Credential ID: ' . $credential_id);
-    log_message('debug', 'Unique ID: ' . $unique_id);
+    $request_data = $this->request->getJson(true);
+    $credential_id = $this->b64urlDecode($request_data['id']);
+    $client_data = $this->b64urlDecode($request_data['client']);
+    $authenticator_data = $this->b64urlDecode($request_data['auth']);
+    $signature = $this->b64urlDecode($request_data['sig']);
+    log_message('debug', 'Credential ID: ' . base64_encode($credential_id));
+    log_message('debug', 'Client data: ' . $client_data);
+    log_message('debug', 'Authenticator data: ' . $authenticator_data);
+    log_message('debug', 'Signature: ' . $signature);
+    $passkey_model = model('Passkey');
+    $passkey = $passkey_model->where('credential_id', base64_encode($credential_id))->first();
+    if ($passkey) {
+      try {
+        if ($webauthn->processGet($client_data, $authenticator_data, $signature, base64_decode($passkey['public_key']), $challenge)) {
+          log_message('debug', 'Credential validation successful');
+          $session->set('logged_in', true);
+          $session->set('user_id', $passkey['user_id']);
+          return $this->response->setJSON(['status' => 'success', 'message' => 'Login successful']);
+        }
+        else {
+          log_message('error', 'Credential validation failed');
+        }
+      }
+      catch (WebAuthnException $e) {
+        log_message('error', 'Error processing credential: ' . $e->getMessage());
+      }
+    }
+    else {
+      log_message('error', "No passkey found for credential ID " . base64_encode($credential_id));
+    }
   }
 
   private function b64urlDecode(string $data): string {
@@ -95,18 +122,8 @@ class Account extends BaseController {
     }
 
     try {
-      log_message('debug', 'About to call processCreate with:');
-      log_message('debug', 'Client data length: ' . strlen($client_data));
-      log_message('debug', 'Attestation data length: ' . strlen($attestation_data));
-      log_message('debug', 'Challenge length: ' . strlen($challenge));
-
-      // Log the raw attestation data in hex format for debugging
-      log_message('debug', 'Attestation data (hex): ' . bin2hex($attestation_data));
-
       // First try with all formats
       $data = $webauthn->processCreate($client_data, $attestation_data, $challenge);
-
-
       log_message('debug', 'processCreate returned: ' . var_export($data, true));
 
       // If we get here, the credential was processed successfully
@@ -117,7 +134,7 @@ class Account extends BaseController {
       $passkey_data = [
         'user_id' => $user_id,
         'nickname' => $nickname,
-        'credential_id' => bin2hex($data->credentialId),
+        'credential_id' => base64_encode($data->credentialId),
         'public_key' => base64_encode($data->credentialPublicKey),
       ];
       $passkey_model = model('Passkey');
@@ -135,13 +152,17 @@ class Account extends BaseController {
 
   }
 
-  public function index(): string {
+  public function index() {
     // Check to see if user is really logged in.
     $session = session();
+    $user_model = model('User');
     if (!$session->get('logged_in')) {
       return redirect()->to('/');
     }
-    return view('account');
+    $user = $user_model->find($session->get('user_id'));
+    return view('account', [
+      'user' => $user,
+    ]);
   }
 
   public function logout() {

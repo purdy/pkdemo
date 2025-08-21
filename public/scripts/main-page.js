@@ -85,24 +85,32 @@ document.addEventListener('DOMContentLoaded', function() {
       e.preventDefault();
       let response = await fetch('/login-preflight');
       let data = await response.json();
-      helper.bta(data);
-      let credential = await navigator.credentials.get(data);
+      data.publicKey = window.PublicKeyCredential.parseRequestOptionsFromJSON(data.publicKey);
       console.log(data);
+      let credential = await navigator.credentials.get(data);
       console.log(credential);
-      let credential_data = {
-        id: credential.rawId ? helper.atb(credential.rawId) : null,
-        client: credential.response.clientDataJSON ? helper.atb(credential.response.clientDataJSON) : null,
-        auth: credential.response.authenticatorData ? helper.atb(credential.response.authenticatorData) : null,
-        sig: credential.response.signature ? helper.atb(credential.response.signature) : null,
-        user: credential.response.userHandle ? helper.atb(credential.response.userHandle) : null
+      let payload = {
+        id: credential.rawId ? toBase64Url(credential.rawId) : null,
+        client: credential.response.clientDataJSON ? toBase64Url(credential.response.clientDataJSON) : null,
+        auth: credential.response.authenticatorData ? toBase64Url(credential.response.authenticatorData) : null,
+        sig: credential.response.signature ? toBase64Url(credential.response.signature) : null,
+        user: credential.response.userHandle ? toBase64Url(credential.response.userHandle) : null
       };
-      let form_data = new FormData();
-      form_data.append('credential', JSON.stringify(credential_data));
       response = await fetch('/passkey-login', {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
         method: 'POST',
-        body: form_data
+        body: JSON.stringify(payload)
       });
-
+      const responseData = await response.json();
+      if (responseData.status === 'success') {
+        window.location.href = '/account';
+      }
+      else {
+        alert('Failed to create account: ' + responseData.message);
+      }
     });
   }
 

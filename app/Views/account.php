@@ -10,7 +10,7 @@
     <h1>Your Account Page</h1>
   </header>
   <main>
-    You are logged in as X.
+    You are logged in as <?= esc($user['email']) ?>.
     Would you like to create a file?
     Would you like to <?= anchor('/logout', 'log out') ?>?
   </main>
