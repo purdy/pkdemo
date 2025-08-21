@@ -26,6 +26,7 @@ class Account extends BaseController {
         $user_id = $user_model->getInsertID();
         $webauthn = new WebAuthn("Simple Passkey App", $this->domain, NULL, true);
         $response['create_args'] = $webauthn->getCreateArgs($user_id, $email, $email);
+        $response['create_args']->attestation = 'none';
         $session = session();
         $session->set([
           'email' => $email,
@@ -37,7 +38,6 @@ class Account extends BaseController {
     else {
       $response = ['status' => 'error', 'message' => 'Invalid email address.'];
     }
-    $response['create_args']->attestation = 'none';
     log_message('debug', "Email check response: " . json_encode($response));
     return $this->response->setJSON($response);
   }
