@@ -3,6 +3,12 @@ recipe: lamp
 config:
   webroot: public
   php: 8.2
+  xdebug: true
+  config:
+    php: .vscode/php.ini
+services:
+  appserver:
+    xdebug: debug
 tooling:
   spark:
     service: appserver
