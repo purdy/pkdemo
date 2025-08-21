@@ -6,6 +6,8 @@ use lbuchs\WebAuthn\WebAuthn;
 use lbuchs\WebAuthn\WebAuthnException;
 
 class Account extends BaseController {
+  protected $domain = 'lndo.site';
+
   public function checkEmail() {
     $email = $this->request->getJsonVar('email');
     if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -22,8 +24,7 @@ class Account extends BaseController {
           'email' => $email,
         ]);
         $user_id = $user_model->getInsertID();
-        $domain = "pkdemo.lndo.site";
-        $webauthn = new WebAuthn("Simple Passkey App", $domain, NULL, true);
+        $webauthn = new WebAuthn("Simple Passkey App", $this->domain, NULL, true);
         $response['create_args'] = $webauthn->getCreateArgs($user_id, $email, $email);
         $session = session();
         $session->set([
@@ -42,8 +43,7 @@ class Account extends BaseController {
   }
 
   public function loginPreflight() {
-    $domain = "pkdemo.lndo.site";
-    $webauthn = new WebAuthn("Simple Passkey App", $domain, null, true);
+    $webauthn = new WebAuthn("Simple Passkey App", $this->domain, null, true);
     $args = $webauthn->getGetArgs();
     log_message('debug', "Login preflight args: " . json_encode($args));
     $session = session();
@@ -54,8 +54,7 @@ class Account extends BaseController {
   public function passkeyLogin() {
     $session = session();
     $challenge = $session->get('challenge');
-    $domain = "pkdemo.lndo.site";
-    $webauthn = new WebAuthn("Simple Passkey App", $domain);
+    $webauthn = new WebAuthn("Simple Passkey App", $this->domain);
     $request_data = $this->request->getJson(true);
     $credential_id = $this->b64urlDecode($request_data['id']);
     $client_data = $this->b64urlDecode($request_data['client']);
@@ -103,8 +102,7 @@ class Account extends BaseController {
     $credential = $request_data['credential'];
     log_message('debug', 'Received credential: ' . print_r($credential, true));
 
-    $domain = "pkdemo.lndo.site";
-    $webauthn = new WebAuthn("Simple Passkey App", $domain);
+    $webauthn = new WebAuthn("Simple Passkey App", $this->domain);
 
     $client_data = $this->b64urlDecode($credential['response']['clientDataJSON']);
     $attestation_data = $this->b64urlDecode($credential['response']['attestationObject']);
