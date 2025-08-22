@@ -158,8 +158,11 @@ class Account extends BaseController {
       return redirect()->to('/');
     }
     $user = $user_model->find($session->get('user_id'));
+    $file_model = model('UserFile');
+    $file_count = $file_model->where('user_id', $user['id'])->countAllResults();
     return view('account', [
       'user' => $user,
+      'file_count' => $file_count,
     ]);
   }
 

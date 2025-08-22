@@ -115,7 +115,7 @@
             <ul class="list-unstyled fs-4 flex-grow-1 d-flex flex-column justify-content-center gap-4 mb-4" aria-live="polite">
               <li class="d-flex align-items-center justify-content-between border-bottom pb-2">
                 <span class="fw-semibold text-uppercase small tracking-wide text-secondary">Files</span>
-                <span class="fw-bold display-6 mb-0 lh-1">—</span>
+                <span class="fw-bold display-6 mb-0 lh-1"><?= number_format($file_count) ?></span>
               </li>
               <li class="d-flex align-items-center justify-content-between border-bottom pb-2">
                 <span class="fw-semibold text-uppercase small text-secondary">Last Login</span>
