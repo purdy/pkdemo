@@ -25,7 +25,7 @@ class Account extends BaseController {
         ]);
         $user_id = $user_model->getInsertID();
         $webauthn = new WebAuthn("Simple Passkey App", $this->domain, NULL, true);
-        $response['create_args'] = $webauthn->getCreateArgs($user_id, $email, $email);
+        $response['create_args'] = $webauthn->getCreateArgs($user_id, $email, $email, 20, true);
         $response['create_args']->attestation = 'none';
         $session = session();
         $session->set([
